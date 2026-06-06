@@ -1,0 +1,48 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "docker deps up",
+            "type": "shell",
+            "command": "cd deployments/docker/dev && docker compose -f docker-compose-apple-silicon.yml up -d etcd minio pulsar",
+            "problemMatcher": []
+        },
+        {
+            "label": "docker deps down",
+            "type": "shell",
+            "command": "cd deployments/docker/dev && docker compose -f docker-compose-apple-silicon.yml down",
+            "problemMatcher": []
+        },
+        {
+            "label": "test current module",
+            "type": "shell",
+            "command": "source scripts/setenv.sh && go test -tags dynamic,test -gcflags='all=-N -l' -v -timeout 10m ${relativeFileDirname}",
+            "problemMatcher": ["$go"],
+            "presentation": {
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "start cluster",
+            "type": "shell",
+            "command": "LOCALSTORAGE_PATH=/tmp/milvus/data/ ./scripts/start_cluster.sh && sleep infinity",
+            "problemMatcher": [],
+            "isBackground": true,
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "stop cluster",
+            "type": "shell",
+            "command": "./scripts/stop_graceful.sh",
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        }
+    ]
+}

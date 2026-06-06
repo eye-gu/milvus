@@ -1,0 +1,251 @@
+{
+    "version": "0.2.0",
+
+    // ─── 用法说明 ──────────────────────────────────────────────
+    // 【日常 Debug】选 "Debug Standalone (embedded)"，零依赖一键 F5
+    //
+    // 【Cluster Debug 流程】
+    //   终端1: Ctrl+Shift+B → docker deps up         (启动 etcd/MinIO/Pulsar)
+    //   终端2: start cluster            (启动所有组件)
+    //   终端2: ./bin/milvus stop <组件名>              (停掉要 debug 的那个)
+    //   VS Code: F5 → 选对应组件 (Proxy/MixCoord/...)
+    //
+    // 【快速编译】make
+    // 【跑测试】  终端: make test-proxy / test-querycoord 等
+    //            或终端: source scripts/setenv.sh && go test -tags dynamic,test -gcflags="all=-N -l" -v ./path/ -run TestXxx
+    // ───────────────────────────────────────────────────────────
+
+    "configurations": [
+        // ============== Standalone (日常首选) ==============
+        {
+            "name": "Debug Standalone (embedded)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/main.go",
+            "args": ["run", "standalone"],
+            "buildFlags": "-tags dynamic,sonic,with_jemalloc",
+            "env": {
+                "DEPLOY_MODE": "STANDALONE",
+                "ETCD_USE_EMBED": "true",
+                "ETCD_DATA_DIR": "${workspaceFolder}/.vscode/etcd_data",
+                "LOCALSTORAGE_PATH": "${workspaceFolder}/.vscode/data",
+                "ROCKSMQ_PATH": "${workspaceFolder}/.vscode/rdb_data",
+                "COMMON_STORAGETYPE": "local",
+                "ETCD_AUTH_ENABLED": "false",
+                "CC": "/opt/homebrew/opt/llvm@17/bin/clang",
+                "CXX": "/opt/homebrew/opt/llvm@17/bin/clang++",
+                "CGO_CFLAGS": "-Wno-deprecated-declarations -I/opt/homebrew/opt/libomp/include -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -DTARGET_OS_OSX=1",
+                "CGO_LDFLAGS": "-L/opt/homebrew/opt/libomp/lib -L/opt/homebrew/opt/llvm@17/lib/c++ -lc++abi -framework Security -framework CoreFoundation",
+                "CGO_ENABLED": "1",
+                "PKG_CONFIG_PATH": "${workspaceFolder}/internal/core/output/lib/pkgconfig",
+                "DYLD_LIBRARY_PATH": "${workspaceFolder}/internal/core/output/lib"
+            },
+            "showLog": true
+        },
+        {
+            "name": "Debug Standalone (external etcd)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/main.go",
+            "args": ["run", "standalone"],
+            "buildFlags": "-tags dynamic,sonic,with_jemalloc",
+            "env": {
+                "DEPLOY_MODE": "STANDALONE",
+                "ETCD_USE_EMBED": "false",
+                "ETCD_ENDPOINTS": "127.0.0.1:2379,127.0.0.1:2380,127.0.0.1:2381",
+                "LOCALSTORAGE_PATH": "${workspaceFolder}/.vscode/data_ext",
+                "ROCKSMQ_PATH": "${workspaceFolder}/.vscode/rdb_data_ext",
+                "COMMON_STORAGETYPE": "local",
+                "ETCD_AUTH_ENABLED": "false",
+                "CC": "/opt/homebrew/opt/llvm@17/bin/clang",
+                "CXX": "/opt/homebrew/opt/llvm@17/bin/clang++",
+                "CGO_CFLAGS": "-Wno-deprecated-declarations -I/opt/homebrew/opt/libomp/include -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -DTARGET_OS_OSX=1",
+                "CGO_LDFLAGS": "-L/opt/homebrew/opt/libomp/lib -L/opt/homebrew/opt/llvm@17/lib/c++ -lc++abi -framework Security -framework CoreFoundation",
+                "CGO_ENABLED": "1",
+                "PKG_CONFIG_PATH": "${workspaceFolder}/internal/core/output/lib/pkgconfig",
+                "DYLD_LIBRARY_PATH": "${workspaceFolder}/internal/core/output/lib"
+            },
+            "showLog": true
+        },
+
+        // ============== Cluster 单组件 (需要先 docker deps up + start cluster) ==============
+        {
+            "name": "Debug Proxy",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/main.go",
+            "args": ["run", "proxy"],
+            "buildFlags": "-tags dynamic,sonic,with_jemalloc",
+            "env": {
+                "DEPLOY_MODE": "CLUSTER",
+                "ETCD_AUTH_ENABLED": "false",
+                "LOCALSTORAGE_PATH": "${workspaceFolder}/.vscode/data",
+                "CC": "/opt/homebrew/opt/llvm@17/bin/clang",
+                "CXX": "/opt/homebrew/opt/llvm@17/bin/clang++",
+                "CGO_CFLAGS": "-Wno-deprecated-declarations -I/opt/homebrew/opt/libomp/include -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -DTARGET_OS_OSX=1",
+                "CGO_LDFLAGS": "-L/opt/homebrew/opt/libomp/lib -L/opt/homebrew/opt/llvm@17/lib/c++ -lc++abi -framework Security -framework CoreFoundation",
+                "CGO_ENABLED": "1",
+                "PKG_CONFIG_PATH": "${workspaceFolder}/internal/core/output/lib/pkgconfig",
+                "DYLD_LIBRARY_PATH": "${workspaceFolder}/internal/core/output/lib"
+            },
+            "showLog": true,
+            "preLaunchTask": "docker deps up"
+        },
+
+        {
+            "name": "Debug QueryNode",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/main.go",
+            "args": ["run", "querynode"],
+            "buildFlags": "-tags dynamic,sonic,with_jemalloc",
+            "env": {
+                "DEPLOY_MODE": "CLUSTER",
+                "ETCD_AUTH_ENABLED": "false",
+                "LOCALSTORAGE_PATH": "${workspaceFolder}/.vscode/data",
+                "CC": "/opt/homebrew/opt/llvm@17/bin/clang",
+                "CXX": "/opt/homebrew/opt/llvm@17/bin/clang++",
+                "CGO_CFLAGS": "-Wno-deprecated-declarations -I/opt/homebrew/opt/libomp/include -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -DTARGET_OS_OSX=1",
+                "CGO_LDFLAGS": "-L/opt/homebrew/opt/libomp/lib -L/opt/homebrew/opt/llvm@17/lib/c++ -lc++abi -framework Security -framework CoreFoundation",
+                "CGO_ENABLED": "1",
+                "PKG_CONFIG_PATH": "${workspaceFolder}/internal/core/output/lib/pkgconfig",
+                "DYLD_LIBRARY_PATH": "${workspaceFolder}/internal/core/output/lib"
+            },
+            "showLog": true,
+            "preLaunchTask": "docker deps up"
+        },
+        {
+            "name": "Debug DataNode",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/main.go",
+            "args": ["run", "datanode"],
+            "buildFlags": "-tags dynamic,sonic,with_jemalloc",
+            "env": {
+                "DEPLOY_MODE": "CLUSTER",
+                "ETCD_AUTH_ENABLED": "false",
+                "LOCALSTORAGE_PATH": "${workspaceFolder}/.vscode/data",
+                "CC": "/opt/homebrew/opt/llvm@17/bin/clang",
+                "CXX": "/opt/homebrew/opt/llvm@17/bin/clang++",
+                "CGO_CFLAGS": "-Wno-deprecated-declarations -I/opt/homebrew/opt/libomp/include -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -DTARGET_OS_OSX=1",
+                "CGO_LDFLAGS": "-L/opt/homebrew/opt/libomp/lib -L/opt/homebrew/opt/llvm@17/lib/c++ -lc++abi -framework Security -framework CoreFoundation",
+                "CGO_ENABLED": "1",
+                "PKG_CONFIG_PATH": "${workspaceFolder}/internal/core/output/lib/pkgconfig",
+                "DYLD_LIBRARY_PATH": "${workspaceFolder}/internal/core/output/lib"
+            },
+            "showLog": true,
+            "preLaunchTask": "docker deps up"
+        },
+        {
+            "name": "Debug MixCoord",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/main.go",
+            "args": ["run", "mixcoord"],
+            "buildFlags": "-tags dynamic,sonic,with_jemalloc",
+            "env": {
+                "DEPLOY_MODE": "CLUSTER",
+                "ETCD_AUTH_ENABLED": "false",
+                "LOCALSTORAGE_PATH": "${workspaceFolder}/.vscode/data",
+                "CC": "/opt/homebrew/opt/llvm@17/bin/clang",
+                "CXX": "/opt/homebrew/opt/llvm@17/bin/clang++",
+                "CGO_CFLAGS": "-Wno-deprecated-declarations -I/opt/homebrew/opt/libomp/include -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -DTARGET_OS_OSX=1",
+                "CGO_LDFLAGS": "-L/opt/homebrew/opt/libomp/lib -L/opt/homebrew/opt/llvm@17/lib/c++ -lc++abi -framework Security -framework CoreFoundation",
+                "CGO_ENABLED": "1",
+                "PKG_CONFIG_PATH": "${workspaceFolder}/internal/core/output/lib/pkgconfig",
+                "DYLD_LIBRARY_PATH": "${workspaceFolder}/internal/core/output/lib"
+            },
+            "showLog": true,
+            "preLaunchTask": "docker deps up"
+        },
+        {
+            "name": "Debug StreamingNode",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/main.go",
+            "args": ["run", "streamingnode"],
+            "buildFlags": "-tags dynamic,sonic,with_jemalloc",
+            "env": {
+                "DEPLOY_MODE": "CLUSTER",
+                "ETCD_AUTH_ENABLED": "false",
+                "LOCALSTORAGE_PATH": "${workspaceFolder}/.vscode/data",
+                "CC": "/opt/homebrew/opt/llvm@17/bin/clang",
+                "CXX": "/opt/homebrew/opt/llvm@17/bin/clang++",
+                "CGO_CFLAGS": "-Wno-deprecated-declarations -I/opt/homebrew/opt/libomp/include -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -DTARGET_OS_OSX=1",
+                "CGO_LDFLAGS": "-L/opt/homebrew/opt/libomp/lib -L/opt/homebrew/opt/llvm@17/lib/c++ -lc++abi -framework Security -framework CoreFoundation",
+                "CGO_ENABLED": "1",
+                "PKG_CONFIG_PATH": "${workspaceFolder}/internal/core/output/lib/pkgconfig",
+                "DYLD_LIBRARY_PATH": "${workspaceFolder}/internal/core/output/lib"
+            },
+            "showLog": true,
+            "preLaunchTask": "docker deps up"
+        },
+
+        // ============== 测试 ==============
+        // 选中函数名 → F5 (单函数) / 直接打开文件 → F5 (整个文件)
+        // 或终端: source scripts/setenv.sh && go test -tags dynamic,test -gcflags="all=-N -l" -v ./path/ -run TestXxx
+        {
+            "name": "Debug Current Go Test",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${fileDirname}",
+            "buildFlags": "-tags dynamic,test",
+            "env": {
+                "CC": "/opt/homebrew/opt/llvm@17/bin/clang",
+                "CXX": "/opt/homebrew/opt/llvm@17/bin/clang++",
+                "CGO_CFLAGS": "-Wno-deprecated-declarations -I/opt/homebrew/opt/libomp/include -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -DTARGET_OS_OSX=1",
+                "CGO_LDFLAGS": "-L/opt/homebrew/opt/libomp/lib -L/opt/homebrew/opt/llvm@17/lib/c++ -lc++abi -framework Security -framework CoreFoundation",
+                "CGO_ENABLED": "1",
+                "PKG_CONFIG_PATH": "${workspaceFolder}/internal/core/output/lib/pkgconfig",
+                "DYLD_LIBRARY_PATH": "${workspaceFolder}/internal/core/output/lib"
+            },
+            "showLog": true
+        },
+
+        {
+            "name": "Attach to Running Milvus",
+            "type": "go",
+            "request": "attach",
+            "mode": "local",
+            "processId": "${command:pickProcess}",
+            "showLog": true
+        },
+
+        // ============== Python 测试 ==============
+        // 需要先启动 Milvus: ./scripts/start_standalone.sh
+        // 打开目标测试文件 → F5 → Debug Current Python Test
+        {
+            "name": "Debug Current Python Test",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "${file}",
+                "-v",
+                "-k", "${input:testFunctionName}",
+                "--host", "localhost",
+                "--port", "19530",
+                "-s"
+            ],
+            "python": "${workspaceFolder}/tests/python_client/.venv/bin/python",
+            "cwd": "${workspaceFolder}/tests/python_client",
+            "console": "integratedTerminal"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "testFunctionName",
+            "type": "promptString",
+            "description": "Test function name (or pattern with -k)",
+            "default": ""
+        }
+    ]
+}

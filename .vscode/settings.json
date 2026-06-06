@@ -1,0 +1,64 @@
+{
+    // ========== Go 语言配置 ==========
+    "go.useLanguageServer": true,
+    "gopls": {
+        "formatting.gofumpt": true,
+        "build.buildFlags": ["-tags", "dynamic,sonic,with_jemalloc"],
+        "env": {
+            "CC": "/opt/homebrew/opt/llvm@17/bin/clang",
+            "CXX": "/opt/homebrew/opt/llvm@17/bin/clang++",
+            "CGO_CFLAGS": "-Wno-deprecated-declarations -I/opt/homebrew/opt/libomp/include -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -DTARGET_OS_OSX=1",
+            "CGO_LDFLAGS": "-L/opt/homebrew/opt/libomp/lib -L/opt/homebrew/opt/llvm@17/lib/c++ -lc++abi -framework Security -framework CoreFoundation"
+        }
+    },
+    "go.lintTool": "golangci-lint",
+    "go.lintFlags": ["--build-tags", "dynamic,test"],
+
+    // gcflags 放在 buildFlags 避免与 go test -c 冲突
+    "go.buildFlags": ["-gcflags=all=-N -l"],
+
+    // 测试必须的 tags 和 flags
+    "go.testTags": "dynamic,test",
+    "go.testFlags": ["-v", "-timeout", "10m"],
+
+    // Go 工具和测试的环境变量（C++ 核心库路径 + CGO 编译器）
+    "go.toolsEnvVars": {
+        "CC": "/opt/homebrew/opt/llvm@17/bin/clang",
+        "CXX": "/opt/homebrew/opt/llvm@17/bin/clang++",
+        "CGO_CFLAGS": "-Wno-deprecated-declarations -I/opt/homebrew/opt/libomp/include -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -DTARGET_OS_OSX=1",
+        "CGO_LDFLAGS": "-L/opt/homebrew/opt/libomp/lib -L/opt/homebrew/opt/llvm@17/lib/c++ -lc++abi -framework Security -framework CoreFoundation",
+        "CGO_ENABLED": "1",
+        "PKG_CONFIG_PATH": "${env:PKG_CONFIG_PATH}:${workspaceFolder}/internal/core/output/lib/pkgconfig",
+        "DYLD_LIBRARY_PATH": "${env:DYLD_LIBRARY_PATH}:${workspaceFolder}/internal/core/output/lib"
+    },
+    "go.testEnvVars": {
+        "CC": "/opt/homebrew/opt/llvm@17/bin/clang",
+        "CXX": "/opt/homebrew/opt/llvm@17/bin/clang++",
+        "CGO_CFLAGS": "-Wno-deprecated-declarations -I/opt/homebrew/opt/libomp/include -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -DTARGET_OS_OSX=1",
+        "CGO_LDFLAGS": "-L/opt/homebrew/opt/libomp/lib -L/opt/homebrew/opt/llvm@17/lib/c++ -lc++abi -framework Security -framework CoreFoundation",
+        "CGO_ENABLED": "1",
+        "PKG_CONFIG_PATH": "${env:PKG_CONFIG_PATH}:${workspaceFolder}/internal/core/output/lib/pkgconfig",
+        "DYLD_LIBRARY_PATH": "${env:DYLD_LIBRARY_PATH}:${workspaceFolder}/internal/core/output/lib"
+    },
+
+    // ========== 终端环境变量 ==========
+    "terminal.integrated.env.osx": {
+        "CC": "/opt/homebrew/opt/llvm@17/bin/clang",
+        "CXX": "/opt/homebrew/opt/llvm@17/bin/clang++",
+        "CGO_CFLAGS": "-Wno-deprecated-declarations -I/opt/homebrew/opt/libomp/include -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -DTARGET_OS_OSX=1",
+        "CGO_LDFLAGS": "-L/opt/homebrew/opt/libomp/lib -L/opt/homebrew/opt/llvm@17/lib/c++ -lc++abi -framework Security -framework CoreFoundation",
+        "PKG_CONFIG_PATH": "${env:PKG_CONFIG_PATH}:${workspaceFolder}/internal/core/output/lib/pkgconfig",
+        "DYLD_LIBRARY_PATH": "${env:DYLD_LIBRARY_PATH}:${workspaceFolder}/internal/core/output/lib"
+    },
+
+    // ========== 文件排除 ==========
+    "files.exclude": {
+        "**/internal/core/output": true,
+        "**/cmake_build": true
+    },
+    "search.exclude": {
+        "**/internal/core/output": true,
+        "**/cmake_build": true,
+        "**/internal/core/thirdparty": true
+    }
+}
